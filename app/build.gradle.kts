@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.jess.coinmarketcapapi"
+    namespace = "com.jess.coinmarketcapapiapp"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.jess.coinmarketcapapi"
+        applicationId = "com.jess.coinmarketcapapiapp"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -88,6 +88,6 @@ dependencies {
     implementation(libs.squareup.moshi)
     implementation(libs.squareup.moshi.kotlin)
     implementation(libs.squareup.moshi.codegen)
-    implementation("com.jakewharton.threetenabp:threetenabp:1.4.4")
+    implementation(libs.jakewharton.threetenabp)
 
 }

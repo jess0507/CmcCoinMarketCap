@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CoinMarketCapApi"
+rootProject.name = "CoinMarketCapApiApp"
 include(":app")
  
