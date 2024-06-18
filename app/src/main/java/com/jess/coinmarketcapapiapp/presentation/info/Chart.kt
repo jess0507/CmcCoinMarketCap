@@ -1,13 +1,17 @@
 package com.jess.coinmarketcapapiapp.presentation.info
 
 import android.graphics.Paint
+import android.util.Log
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asAndroidPath
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.sp
@@ -15,7 +19,6 @@ import com.jess.coinmarketcapapiapp.data.remote.dto.Quote
 import org.threeten.bp.ZonedDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import org.threeten.bp.format.DateTimeParseException
-import kotlin.math.round
 import kotlin.math.roundToInt
 
 
@@ -25,13 +28,15 @@ fun Chart(
     modifier: Modifier = Modifier,
     graphColor: Color = Color.Green
 ) {
-    Spacer(modifier = Modifier.statusBarsPadding())
+    if (quotes.isEmpty()) return
     val upperValue: Int = remember(quotes) {
-        quotes.maxOfOrNull { it.quote.values.first().close }?.plus(1)?.roundToInt() ?: 0
-    }
+        quotes.maxOfOrNull { it.quote.values.first().close }?.roundToInt() ?: 1
+    }.apply { if (this == 0) this+1 }
     val lowerValue: Int = remember(quotes) {
         quotes.minOfOrNull { it.quote.values.first().close }?.roundToInt() ?: 0
     }
+    Log.d("Chart", "upperValue=$upperValue, lowerValue=$lowerValue")
+
     val density = LocalDensity.current
     val textPaint = remember(density) {
         Paint().apply {
@@ -44,90 +49,91 @@ fun Chart(
     val transparentGraphColor = remember {
         graphColor.copy(0.5f)
     }
-    Canvas(modifier = modifier) {
-        val spacePerHour = (size.width - spacing) / quotes.size
-        (0 until quotes.size - 1).forEach { i ->
-//            val info = quotes[i]
-//            val timestamp = info.quote.values.firstOrNull()?.timestamp
-//            val hour = timestamp?.timeStamp2Date()?.hour
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val verticalRange = upperValue - lowerValue
+        val horizontalStep = size.width / quotes.size
+        val verticalStep = size.height / verticalRange
+        Log.d("Chart", "length=${quotes.size}, verticalRange=$verticalRange, horizontalStep=$horizontalStep, verticalStep=$verticalStep")
+
+        val timestamp = quotes.firstOrNull()?.quote?.values?.firstOrNull()?.timestamp
+        val time = timestamp?.timeStamp2Date()
+        val timeStep = (24 - (time?.hour ?:0))/quotes.size
+
+        quotes.indices.forEach { i ->
             drawContext.canvas.nativeCanvas.apply {
+                val showTime =
+                    time?.plusHours(timeStep*i.toLong())?.format(DateTimeFormatter.ofPattern("HH:mm"))
+                Log.d("Chart", "$i: showTime=$showTime")
                 drawText(
-                    "$i",
-                    spacing + i * spacePerHour,
+                    "$showTime",
+                    spacing + i * horizontalStep,
                     size.height - 5,
                     textPaint
                 )
             }
         }
+
         val priceStep = (upperValue - lowerValue) / 5f
-        (0..4).forEach { i ->
+        quotes.indices.forEach { i ->
+            Log.d("Chart", "i=$i, price=$${lowerValue + priceStep * i}")
             drawContext.canvas.nativeCanvas.apply {
                 drawText(
-                    round(lowerValue + priceStep * i).toString(),
+                    "${lowerValue + priceStep * i}",
                     30f,
                     size.height - spacing - i * size.height / 5f,
                     textPaint
                 )
             }
         }
-//        var lastX = 0f
-//        val strokePath = android.graphics.Path().apply {
-//            val height = size.height
-//            for (i in quotes.indices) {
-//                val info = quotes[i]
-//                val nextInfo = quotes.getOrNull(i + 1) ?: quotes.last()
-//                val leftRatio = (info.close - lowerValue) / (upperValue - lowerValue)
-//                val rightRatio = (nextInfo.close - lowerValue) / (upperValue - lowerValue)
-//
-//                val x1 = spacing + i * spacePerHour
-//                val y1 = height - spacing - (leftRatio * height).toFloat()
-//                val x2 = spacing + (i + 1) * spacePerHour
-//                val y2 = height - spacing - (rightRatio * height).toFloat()
-//                if (i == 0) {
-//                    moveTo(x1, y1)
-//                }
-//                lastX = (x1 + x2) / 2f
-//                quadraticBezierTo(
-//                    x1, y1, lastX, (y1 + y2) / 2f
-//                )
-//            }
-//        }
-//        val fillPath = android.graphics.Path(strokePath.asAndroidPath())
-//            .asComposePath()
-//            .apply {
-//                lineTo(lastX, size.height - spacing)
-//                lineTo(spacing, size.height - spacing)
-//                close()
-//            }
-//        drawPath(
-//            path = fillPath,
-//            brush = Brush.verticalGradient(
-//                colors = listOf(
-//                    transparentGraphColor,
-//                    Color.Transparent
-//                ),
-//                endY = size.height - spacing
-//            )
-//        )
-//        drawPath(
-//            path = strokePath,
-//            color = graphColor,
-//            style = Stroke(
-//                width = 3.dp.toPx(),
-//                cap = StrokeCap.Round
-//            )
-//        )
-//    }
+
+        var lastX = 0f
+        val strokePath = Path().apply {
+            val height = size.height
+            for (i in 0..quotes.size-2) {
+                val info = quotes[i]
+                val nextInfo = quotes.getOrNull(i + 1) ?: quotes.last()
+                val leftRatio = (info.quote.values.first().close - lowerValue) / (upperValue - lowerValue)
+                val rightRatio = (nextInfo.quote.values.first().close - lowerValue) / (upperValue - lowerValue)
+
+                val x1 = spacing + i * horizontalStep
+                val y1 = height - spacing - (leftRatio * height).toFloat()
+                val x2 = spacing + (i + 1) * horizontalStep
+                val y2 = height - spacing - (rightRatio * height).toFloat()
+                if (i == 0) {
+                    moveTo(x1, y1)
+                }
+                lastX = (x1 + x2) / 2f
+                quadraticBezierTo(
+                    x1, y1, lastX, (y1 + y2) / 2f
+                )
+            }
+        }
+        val fillPath = android.graphics.Path(strokePath.asAndroidPath())
+            .asComposePath()
+            .apply {
+                lineTo(lastX, size.height - spacing)
+                lineTo(spacing.toFloat(), size.height - spacing)
+                close()
+            }
+        drawPath(
+            path = fillPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    transparentGraphColor,
+                    Color.Transparent
+                ),
+                endY = size.height - spacing
+            )
+        )
     }
 }
 
 
 fun String.timeStamp2Date(): ZonedDateTime? {
-    val dateString = "2024-06-11T02:32:46.824Z"
     val formatter = DateTimeFormatter.ISO_DATE_TIME
 
     try {
-        val date = ZonedDateTime.parse(dateString, formatter)
+        val date = ZonedDateTime.parse(this, formatter)
         return date
     } catch (e: DateTimeParseException) {
         println("Error parsing date: " + e.message)

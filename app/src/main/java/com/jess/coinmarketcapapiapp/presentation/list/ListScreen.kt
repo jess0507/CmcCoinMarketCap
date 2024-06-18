@@ -1,14 +1,17 @@
 package com.jess.coinmarketcapapiapp.presentation.list
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -26,9 +29,10 @@ fun ListScreen(
 ) {
     val state = viewModel.state
     ListScreen(
+        isLoading = viewModel.isLoading,
         items = state,
-        onClickItem = {
-            navController?.navigate(Screen.Info.name)
+        onClickItem = { symbol ->
+            navController.navigate("${Screen.Info.name}/${symbol}")
         },
     )
 }
@@ -36,8 +40,9 @@ fun ListScreen(
 @Composable
 internal fun ListScreen(
     modifier: Modifier = Modifier,
+    isLoading: Boolean,
     items: List<Currency>,
-    onClickItem: (() -> Unit)? = null,
+    onClickItem: ((String?) -> Unit)? = null,
 ) {
     Column(
         modifier = modifier
@@ -45,19 +50,25 @@ internal fun ListScreen(
             .background(DarkBlue)
             .statusBarsPadding()
             .navigationBarsPadding()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        LazyColumn(
-            modifier = modifier.fillMaxSize()
-        ) {
-            items(items.size) { i ->
-                val currency = items[i]
-                Item(
-                    currency = currency,
-                    onClickItem = onClickItem,
-                )
-                if (i < items.size) {
-                    Divider()
+        if (isLoading && items.isEmpty()) {
+            CircularProgressIndicator()
+        } else {
+            LazyColumn(
+                modifier = modifier.fillMaxSize()
+            ) {
+                items(items.size) { i ->
+                    val currency = items[i]
+                    Item(
+                        currency = currency,
+                        onClickItem = onClickItem,
+                    )
+                    if (i < items.size) {
+                        Divider()
+                    }
                 }
             }
         }
@@ -75,5 +86,5 @@ fun ListScreenPreview() {
             quote = mapOf("BTC" to CurrentQuote(price = 10.0001))
         )
     )
-    ListScreen(modifier = Modifier, items = items)
+    ListScreen(modifier = Modifier, items = items, isLoading = true)
 }

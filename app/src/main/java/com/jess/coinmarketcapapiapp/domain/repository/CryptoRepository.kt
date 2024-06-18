@@ -7,5 +7,5 @@ import kotlinx.coroutines.flow.Flow
 
 interface CryptoRepository {
     suspend fun fetchLatestList(): Flow<Resource<List<Currency>>>
-    suspend fun fetchHistoricalData(): Flow<Resource<List<Quote>>>
+    suspend fun fetchHistoricalData(symbol: String, convert: String): Flow<Resource<List<Quote>>>
 }

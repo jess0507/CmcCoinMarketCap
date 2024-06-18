@@ -3,6 +3,7 @@ package com.jess.coinmarketcapapiapp.presentation.info
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -15,12 +16,49 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class InfoViewModel @Inject constructor(private val repository: CryptoRepositoryImpl) :
+class InfoViewModel @Inject constructor(
+    saveStateHandle: SavedStateHandle,
+    private val repository: CryptoRepositoryImpl
+) :
     ViewModel() {
+    var isLoading by mutableStateOf(false)
     var state by mutableStateOf<List<Quote>>(emptyList())
 
     init {
+        val symbol = saveStateHandle.get<String>("symbol")
+        symbol?.let {
+            fetchHistoricalData(symbol = it, convert = "USD")
+        }
+    }
 
+    private fun fetchHistoricalData(symbol: String, convert: String) {
+        viewModelScope.launch {
+            repository.fetchHistoricalData(
+                symbol = symbol,
+                convert = convert
+            ).collect { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        result.data?.let {
+                            state = it
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        fail2TestData()?.data?.values?.first()?.quotes?.let {
+                            state = it
+                        }
+                    }
+
+                    is Resource.Loading -> {
+                        isLoading = result.isLoading
+                    }
+                }
+            }
+        }
+    }
+
+    private fun fail2TestData(): HistoricalResponse? {
         val historicalResponse = Gson().fromJson(
             """
             {
@@ -215,25 +253,6 @@ class InfoViewModel @Inject constructor(private val repository: CryptoRepository
         """.trimIndent(),
             HistoricalResponse::class.java
         )
-        val quote: List<Quote> = historicalResponse.data.values.firstOrNull()?.quotes ?: emptyList()
-        state = quote
-//        fetchHistoricalData("fd98ab1c-f346-4631-aa1c-6e664907319f")
-    }
-
-    private fun fetchHistoricalData(apiKey: String) {
-        viewModelScope.launch {
-            repository.fetchHistoricalData().collect { result ->
-                when (result) {
-                    is Resource.Success -> {
-                        result.data?.let {
-                            state = it
-                        }
-                    }
-
-                    is Resource.Error -> Unit
-                    is Resource.Loading -> Unit
-                }
-            }
-        }
+        return historicalResponse
     }
 }

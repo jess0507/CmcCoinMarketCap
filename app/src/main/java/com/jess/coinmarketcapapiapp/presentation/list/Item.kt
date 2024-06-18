@@ -21,11 +21,11 @@ import com.jess.coinmarketcapapiapp.data.remote.dto.CurrentQuote
 fun Item(
     currency: Currency,
     modifier: Modifier = Modifier,
-    onClickItem: (() -> Unit)? = null
+    onClickItem: ((String?) -> Unit)? = null,
 ) {
     Row(
         modifier = modifier.clickable {
-            onClickItem?.invoke()
+            onClickItem?.invoke(currency.symbol)
         },
         verticalAlignment = Alignment.CenterVertically
     ) {

@@ -89,5 +89,5 @@ dependencies {
     implementation(libs.squareup.moshi.kotlin)
     implementation(libs.squareup.moshi.codegen)
     implementation(libs.jakewharton.threetenabp)
-
+    implementation("androidx.compose.foundation:foundation:1.7.0-alpha02")
 }

@@ -1,6 +1,7 @@
 package com.jess.coinmarketcapapiapp.di
 
 import com.jess.coinmarketcapapiapp.data.remote.CryptoApi
+import com.jess.coinmarketcapapiapp.data.remote.SandboxApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -19,6 +20,16 @@ object AppModule {
     @Provides
     @Singleton
     fun provideCryptoApi(): CryptoApi {
+        return createRetrofit(CryptoApi.BASE_URL).create()
+    }
+
+    @Provides
+    @Singleton
+    fun provideSandboxApi(): SandboxApi {
+        return createRetrofit(SandboxApi.BASE_URL).create()
+    }
+
+    private fun createRetrofit(baseUrl: String): Retrofit {
         val logging = HttpLoggingInterceptor()
         logging.setLevel(HttpLoggingInterceptor.Level.BODY)
 
@@ -28,10 +39,9 @@ object AppModule {
             .build()
 
         return Retrofit.Builder()
-            .baseUrl(CryptoApi.BASE_URL)
+            .baseUrl(baseUrl)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create()
     }
 }

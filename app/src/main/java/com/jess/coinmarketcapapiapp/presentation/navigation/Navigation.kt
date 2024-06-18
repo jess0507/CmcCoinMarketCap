@@ -12,7 +12,13 @@ fun MainNavigation() {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Screen.List.name) {
-        composable(Screen.List.name) { ListScreen(navController = navController) }
-        composable(Screen.Info.name) { InfoScreen(navController = navController) }
+        composable(route = List.route) { ListScreen(navController = navController) }
+        composable(
+            route = Info.routeWithArgs,
+            arguments = Info.arguments,
+        ) { entry ->
+            val symbol = entry.arguments?.getString(Info.symbolArg)
+            InfoScreen(navController = navController, symbol = symbol)
+        }
     }
 }

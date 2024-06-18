@@ -1,10 +1,16 @@
 package com.jess.coinmarketcapapiapp.presentation.info
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -16,20 +22,29 @@ import com.jess.coinmarketcapapiapp.data.remote.dto.Quote
 import com.jess.coinmarketcapapiapp.ui.theme.DarkBlue
 
 @Composable
-fun InfoScreen(navController: NavHostController) {
-    InfoScreen()
+fun InfoScreen(navController: NavHostController, symbol: String?) {
+    InfoScreen(symbol)
 }
 
 @Composable
-internal fun InfoScreen(infoViewModel: InfoViewModel = hiltViewModel()) {
+internal fun InfoScreen(symbol: String?, infoViewModel: InfoViewModel = hiltViewModel()) {
     val state = infoViewModel.state
+    val isLoading = infoViewModel.isLoading
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(DarkBlue)
-            .padding(16.dp)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp)),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Chart(quotes = state)
+        if (isLoading && state.isEmpty()) {
+            CircularProgressIndicator()
+        } else {
+            Chart(quotes = state)
+        }
     }
 }
 
