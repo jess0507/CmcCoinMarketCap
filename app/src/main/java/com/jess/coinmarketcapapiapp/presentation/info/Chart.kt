@@ -3,6 +3,7 @@ package com.jess.coinmarketcapapiapp.presentation.info
 import android.graphics.Paint
 import android.util.Log
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -10,8 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.asAndroidPath
-import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.sp
@@ -19,6 +18,7 @@ import com.jess.coinmarketcapapiapp.data.remote.dto.Quote
 import org.threeten.bp.ZonedDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import org.threeten.bp.format.DateTimeParseException
+import kotlin.math.ceil
 import kotlin.math.roundToInt
 
 
@@ -30,8 +30,10 @@ fun Chart(
 ) {
     if (quotes.isEmpty()) return
     val upperValue: Int = remember(quotes) {
-        quotes.maxOfOrNull { it.quote.values.first().close }?.roundToInt() ?: 1
-    }.apply { if (this == 0) this+1 }
+        quotes.maxOfOrNull { it.quote.values.first().close }?.let { ceil(it).roundToInt() } ?: 1
+    }
+    Log.d("Chart", "maxQuotes=${quotes.maxOfOrNull { it.quote.values.first().close }}")
+
     val lowerValue: Int = remember(quotes) {
         quotes.minOfOrNull { it.quote.values.first().close }?.roundToInt() ?: 0
     }
@@ -49,9 +51,9 @@ fun Chart(
     val transparentGraphColor = remember {
         graphColor.copy(0.5f)
     }
-    Canvas(modifier = Modifier.fillMaxSize()) {
+    Canvas(modifier = Modifier.fillMaxSize().background(Color.DarkGray)) {
         val verticalRange = upperValue - lowerValue
-        val horizontalStep = size.width / quotes.size
+        val horizontalStep = (size.width - spacing/2) / quotes.size
         val verticalStep = size.height / verticalRange
         Log.d("Chart", "length=${quotes.size}, verticalRange=$verticalRange, horizontalStep=$horizontalStep, verticalStep=$verticalStep")
 
@@ -89,27 +91,26 @@ fun Chart(
         var lastX = 0f
         val strokePath = Path().apply {
             val height = size.height
-            for (i in 0..quotes.size-2) {
+            for (i in quotes.indices) {
                 val info = quotes[i]
                 val nextInfo = quotes.getOrNull(i + 1) ?: quotes.last()
                 val leftRatio = (info.quote.values.first().close - lowerValue) / (upperValue - lowerValue)
                 val rightRatio = (nextInfo.quote.values.first().close - lowerValue) / (upperValue - lowerValue)
 
                 val x1 = spacing + i * horizontalStep
-                val y1 = height - spacing - (leftRatio * height).toFloat()
+                val y1 = height - (leftRatio * height).toFloat()
                 val x2 = spacing + (i + 1) * horizontalStep
-                val y2 = height - spacing - (rightRatio * height).toFloat()
+                val y2 = height - (rightRatio * height).toFloat()
                 if (i == 0) {
                     moveTo(x1, y1)
                 }
                 lastX = (x1 + x2) / 2f
-                quadraticBezierTo(
+                quadraticTo(
                     x1, y1, lastX, (y1 + y2) / 2f
                 )
             }
         }
-        val fillPath = android.graphics.Path(strokePath.asAndroidPath())
-            .asComposePath()
+        val fillPath = strokePath
             .apply {
                 lineTo(lastX, size.height - spacing)
                 lineTo(spacing.toFloat(), size.height - spacing)
