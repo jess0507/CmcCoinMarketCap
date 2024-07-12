@@ -1,6 +1,6 @@
-.gradle/
-.idea/
-app/build/
+/.gradle/
+/.idea/
+/app/build/
 
 .DS_Store
 */key.properties
