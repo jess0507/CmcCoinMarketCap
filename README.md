@@ -2,8 +2,9 @@
 
 ### Demo
 * Screenshots
+
 |Screen1|Screen2|
-|-|-|
+|----   |----   |
 |![screen1.png](screenshots%2Fscreen1.png)|![screen2.png](screenshots%2Fscreen2.png)| 
 
 * Video
