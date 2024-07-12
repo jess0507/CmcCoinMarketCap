@@ -3,7 +3,6 @@ package com.jess.coinmarketcapapiapp.presentation.info
 import android.graphics.Paint
 import android.util.Log
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -51,7 +50,7 @@ fun Chart(
     val transparentGraphColor = remember {
         graphColor.copy(0.5f)
     }
-    Canvas(modifier = Modifier.fillMaxSize().background(Color.DarkGray)) {
+    Canvas(modifier = modifier.fillMaxSize()) {
         val verticalRange = upperValue - lowerValue
         val horizontalStep = (size.width - spacing/2) / quotes.size
         val verticalStep = size.height / verticalRange
